@@ -1,34 +1,27 @@
-name: Deploy Frontend to AWS Lambda
+name: Deploy AWS Lambda
 
 on:
   push:
-    branches:
+    branches: 
       - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write # Required for OIDC authentication
+      contents: read  # Required to check out the repository
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Create Deployment Package
-        run: |
-          zip -r frontend.zip . \
-          -x ".git/*" \
-          -x ".github/*" \
-          -x "*.md"
-
-      - name: Configure AWS Credentials
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubActionRole
           aws-region: us-east-1
-
-      - name: Deploy to Lambda
-        run: |
-          aws lambda update-function-code \
-            --function-name frontend-deployment \
-            --zip-file fileb://frontend.zip
+      
+      - name: Deploy Lambda Function
+        uses: aws-actions/aws-lambda-deploy@v1
+        with:
+          function-name: my-lambda-function
+          code-artifacts-dir: ./dist
